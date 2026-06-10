@@ -33,7 +33,7 @@ spec:
       containers:
       - name: my-rest-api-358
         # image is updated by the Tekton pipeline after each build
-        image: image-registry.openshift-image-registry.svc:5000/my-rest-api/my-rest-api-358@sha256:3c7eaae63bf0c5efe18cbd650fb424e755ff29f4af6ab2b4d4dc41000c5e7bdd
+        image: image-registry.openshift-image-registry.svc:5000/my-rest-api/my-rest-api-358@sha256:bc7da6e2ce9624f534d22bd074fabe689fc99772909ef0873b91ab373ca535ac
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
