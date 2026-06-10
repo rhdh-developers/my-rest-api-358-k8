@@ -1,0 +1,104 @@
+# ConfigMap holds the initial PipelineRun manifest so the trigger Job can apply it
+# without heredoc indentation issues.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-rest-api-358-initial-build-manifest
+  namespace: my-rest-api
+data:
+  pipelinerun.yaml: |
+    apiVersion: tekton.dev/v1
+    kind: PipelineRun
+    metadata:
+      name: my-rest-api-358-initial-build
+      namespace: my-rest-api
+      labels:
+        app.kubernetes.io/instance: my-rest-api-358
+        app.kubernetes.io/name: my-rest-api-358
+        backstage.io/kubernetes-id: my-rest-api-358
+        pipeline.openshift.io/strategy: docker
+        pipeline.openshift.io/type: kubernetes
+        tekton.dev/pipeline: my-rest-api-358
+    spec:
+      pipelineRef:
+        name: my-rest-api-358
+      params:
+      - name: APP_NAME
+        value: my-rest-api-358
+      - name: GIT_REPO
+        value: https://github.com/rhdh-developers/my-rest-api-358-code.git
+      - name: GIT_K8_REPO
+        value: https://github.com/rhdh-developers/my-rest-api-358-k8.git
+      - name: GIT_REVISION
+        value: main
+      - name: IMAGE_NAME
+        value: image-registry.openshift-image-registry.svc:5000/my-rest-api/my-rest-api-358
+      - name: PATH_CONTEXT
+        value: .
+      taskRunTemplate:
+        serviceAccountName: pipeline
+      timeouts:
+        pipeline: 1h0m0s
+      workspaces:
+      - name: workspace
+        volumeClaimTemplate:
+          metadata:
+            labels:
+              tekton.dev/pipeline: my-rest-api-358
+          spec:
+            accessModes:
+            - ReadWriteOnce
+            resources:
+              requests:
+                storage: 1Gi
+      - name: k8-workspace
+        volumeClaimTemplate:
+          metadata:
+            labels:
+              tekton.dev/pipeline: my-rest-api-358
+          spec:
+            accessModes:
+            - ReadWriteOnce
+            resources:
+              requests:
+                storage: 1Gi
+---
+# Regular synced Job (not a hook) – ArgoCD creates it once at wave 1 (after the Pipeline
+# exists at wave 0) and never touches it again (CreateOnly=true, Prune=false).
+# The idempotency guard means re-creating the Job manually triggers a new build safely.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: my-rest-api-358-initial-build-trigger
+  namespace: my-rest-api
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: CreateOnly=true,Prune=false
+spec:
+  ttlSecondsAfterFinished: 600
+  template:
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: pipeline
+      volumes:
+        - name: manifest
+          configMap:
+            name: my-rest-api-358-initial-build-manifest
+      containers:
+        - name: trigger
+          image: image-registry.openshift-image-registry.svc:5000/openshift/cli:latest
+          volumeMounts:
+            - name: manifest
+              mountPath: /config
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              if oc get pipelinerun my-rest-api-358-initial-build -n my-rest-api >/dev/null 2>&1; then
+                echo "PipelineRun my-rest-api-358-initial-build already exists, skipping."
+                exit 0
+              fi
+              echo "Creating initial PipelineRun..."
+              oc create -f /config/pipelinerun.yaml
+              echo "Done."

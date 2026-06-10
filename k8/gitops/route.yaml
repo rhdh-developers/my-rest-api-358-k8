@@ -1,0 +1,25 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: my-rest-api-358
+  namespace: my-rest-api
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app: my-rest-api-358
+    app.kubernetes.io/component: my-rest-api-358
+    app.kubernetes.io/instance: my-rest-api-358
+    app.kubernetes.io/name: my-rest-api-358
+    app.kubernetes.io/part-of: my-rest-api-358
+    backstage.io/kubernetes-id: my-rest-api-358
+spec:
+  port:
+    targetPort: 8000-tcp
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+  to:
+    kind: Service
+    name: my-rest-api-358
+    weight: 100
+  wildcardPolicy: None

@@ -1,0 +1,57 @@
+# Manual PipelineRun template – copy and apply to trigger an ad-hoc build.
+# The EventListener / TriggerTemplate creates these automatically on git push.
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: my-rest-api-358-
+  namespace: my-rest-api
+  labels:
+    app.kubernetes.io/instance: my-rest-api-358
+    app.kubernetes.io/name: my-rest-api-358
+    backstage.io/kubernetes-id: my-rest-api-358
+    pipeline.openshift.io/strategy: docker
+    pipeline.openshift.io/type: kubernetes
+    tekton.dev/pipeline: my-rest-api-358
+spec:
+  pipelineRef:
+    name: my-rest-api-358
+  params:
+  - name: APP_NAME
+    value: my-rest-api-358
+  - name: GIT_REPO
+    value: https://github.com/rhdh-developers/my-rest-api-358-code.git
+  - name: GIT_K8_REPO
+    value: https://github.com/rhdh-developers/my-rest-api-358-k8.git
+  - name: GIT_REVISION
+    value: main
+  - name: IMAGE_NAME
+    value: image-registry.openshift-image-registry.svc:5000/my-rest-api/my-rest-api-358
+  - name: PATH_CONTEXT
+    value: .
+  taskRunTemplate:
+    serviceAccountName: pipeline
+  timeouts:
+    pipeline: 1h0m0s
+  workspaces:
+  - name: workspace
+    volumeClaimTemplate:
+      metadata:
+        labels:
+          tekton.dev/pipeline: my-rest-api-358
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+  - name: k8-workspace
+    volumeClaimTemplate:
+      metadata:
+        labels:
+          tekton.dev/pipeline: my-rest-api-358
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi

@@ -1,0 +1,24 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: my-rest-api-358-listener
+  namespace: my-rest-api
+spec:
+  serviceAccountName: pipeline
+  triggers:
+  - name: github-push
+    interceptors:
+    - ref:
+        name: github
+      params:
+      - name: secretRef
+        value:
+          secretName: github-webhook-secret
+          secretKey: secret
+      - name: eventTypes
+        value:
+        - push
+    bindings:
+    - ref: my-rest-api-358-binding
+    template:
+      ref: my-rest-api-358-template

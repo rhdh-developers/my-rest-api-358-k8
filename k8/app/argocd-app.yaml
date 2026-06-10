@@ -1,0 +1,52 @@
+# Argo CD Application for OpenShift GitOps.
+#
+# - Argo CD operator CR: argoproj.io/v1beta1 ArgoCD named "openshift-gitops"
+#   in namespace "openshift-gitops" (NOT the app workload namespace).
+# - Application CR lives in openshift-gitops; workloads sync to my-rest-api.
+# - The destination namespace must exist before the template run (not synced from git).
+# - ignoreDifferences below ignores Namespace drift if a Namespace object appears in git.
+#
+# OpenShift GitOps excludes tekton.dev/PipelineRun and TaskRun from reconciliation;
+# the Pipeline, triggers, and deployment still deploy from gitops.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: my-rest-api-358
+  namespace: openshift-gitops
+  labels:
+    app.kubernetes.io/name: my-rest-api-358
+    backstage.io/kubernetes-id: my-rest-api-358
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/rhdh-developers/my-rest-api-358-k8.git
+    targetRevision: main
+    path: k8/gitops
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: my-rest-api
+  ignoreDifferences:
+    - group: ""
+      kind: Namespace
+      name: my-rest-api
+      jqPathExpressions:
+        - .
+    # Tekton operator / triggers controller mutate these after apply.
+    - group: tekton.dev
+      kind: Pipeline
+      jsonPointers:
+        - /status
+    - group: triggers.tekton.dev
+      kind: EventListener
+      jsonPointers:
+        - /status
+        - /spec/triggers
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+      - RespectIgnoreDifferences=true
+      - FailOnSharedResource=true
+      - ServerSideApply=true

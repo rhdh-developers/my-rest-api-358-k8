@@ -1,0 +1,59 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: my-rest-api-358-template
+  namespace: my-rest-api
+spec:
+  params:
+  - name: git-repo-url
+  - name: git-revision
+    default: main
+  resourcetemplates:
+  - apiVersion: tekton.dev/v1
+    kind: PipelineRun
+    metadata:
+      generateName: my-rest-api-358-
+      namespace: my-rest-api
+      labels:
+        app.kubernetes.io/instance: my-rest-api-358
+        backstage.io/kubernetes-id: my-rest-api-358
+        pipeline.openshift.io/strategy: docker
+        pipeline.openshift.io/type: kubernetes
+        tekton.dev/pipeline: my-rest-api-358
+    spec:
+      pipelineRef:
+        name: my-rest-api-358
+      params:
+      - name: APP_NAME
+        value: my-rest-api-358
+      - name: GIT_REPO
+        value: $(tt.params.git-repo-url)
+      - name: GIT_REVISION
+        value: $(tt.params.git-revision)
+      - name: IMAGE_NAME
+        value: image-registry.openshift-image-registry.svc:5000/my-rest-api/my-rest-api-358
+      - name: GIT_K8_REPO
+        value: https://github.com/rhdh-developers/my-rest-api-358-k8.git
+      - name: PATH_CONTEXT
+        value: .
+      taskRunTemplate:
+        serviceAccountName: pipeline
+      timeouts:
+        pipeline: 1h0m0s
+      workspaces:
+      - name: workspace
+        volumeClaimTemplate:
+          spec:
+            accessModes:
+            - ReadWriteOnce
+            resources:
+              requests:
+                storage: 1Gi
+      - name: k8-workspace
+        volumeClaimTemplate:
+          spec:
+            accessModes:
+            - ReadWriteOnce
+            resources:
+              requests:
+                storage: 1Gi

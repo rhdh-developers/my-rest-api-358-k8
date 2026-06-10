@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-rest-api-358
+  namespace: my-rest-api
+  annotations:
+    # After Tekton (wave 0). Avoids blocking Pipeline/EventListener while Deployment is ImagePullBackOff.
+    argocd.argoproj.io/sync-wave: "1"
+  labels:
+    app: my-rest-api-358
+    app.kubernetes.io/component: my-rest-api-358
+    app.kubernetes.io/instance: my-rest-api-358
+    app.kubernetes.io/name: my-rest-api-358
+    app.kubernetes.io/part-of: my-rest-api-358
+    backstage.io/kubernetes-id: my-rest-api-358
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-rest-api-358
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        app: my-rest-api-358
+        deployment: my-rest-api-358
+        backstage.io/kubernetes-id: my-rest-api-358
+    spec:
+      containers:
+      - name: my-rest-api-358
+        # image is updated by the Tekton pipeline after each build
+        image: image-registry.openshift-image-registry.svc:5000/my-rest-api/my-rest-api-358:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 20
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
