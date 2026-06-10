@@ -18,6 +18,6 @@ resources:
   - service.yaml
   - route.yaml
   - httproute.yaml
-  # - authpolicy.yaml
-  # - planpolicy.yaml
+  - authpolicy.yaml
+  - planpolicy.yaml
   - initial-pipelinerun-hook.yaml
